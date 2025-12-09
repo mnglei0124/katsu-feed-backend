@@ -15,40 +15,48 @@ export class CommentsService {
     const { data, error } = await this.supabaseService.supabaseClient
       .from('comments')
       .insert([createCommentDto])
-      .select('*, author:profiles(*)')
+      .select('*, profiles!user_id(*)')
       .single();
 
     if (error) {
       throw new NotFoundException(error.message);
     }
-    this.notificationsGateway.server.emit('newComment', data); // Emit WebSocket event
-    return data;
+    
+    const comment = { ...data, author: data.profiles, profiles: undefined };
+    this.notificationsGateway.server.emit('newComment', comment); // Emit WebSocket event
+    return comment;
   }
 
   async findAllByPostId(postId: string) {
     const { data, error } = await this.supabaseService.supabaseClient
       .from('comments')
-      .select('*, author:profiles(*)')
+      .select('*, profiles!user_id(*)')
       .eq('post_id', postId)
       .order('created_at', { ascending: true });
 
     if (error) {
       throw new NotFoundException(error.message);
     }
-    return data;
+    
+    return data.map((comment: any) => ({
+      ...comment,
+      author: comment.profiles,
+      profiles: undefined
+    }));
   }
 
   async findOne(id: string) {
     const { data, error } = await this.supabaseService.supabaseClient
       .from('comments')
-      .select('*, author:profiles(*)')
+      .select('*, profiles!user_id(*)')
       .eq('id', id)
       .single();
 
     if (error) {
       throw new NotFoundException(error.message);
     }
-    return data;
+    
+    return { ...data, author: data.profiles, profiles: undefined };
   }
 
   async update(id: string, updateCommentDto: UpdateCommentDto) {
@@ -56,7 +64,7 @@ export class CommentsService {
       .from('comments')
       .update(updateCommentDto)
       .eq('id', id)
-      .select('*, author:profiles(*)')
+      .select('*, profiles!user_id(*)')
       .single();
 
     if (error) {

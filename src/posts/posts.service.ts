@@ -15,38 +15,47 @@ export class PostsService {
     const { data, error } = await this.supabaseService.supabaseClient
       .from('posts')
       .insert([createPostDto])
-      .select('*, author:profiles(*)')
+      .select('*, profiles!user_id(*)')
       .single();
 
     if (error) {
       throw new NotFoundException(error.message);
     }
-    return data;
+    
+    // Map profiles to author
+    return { ...data, author: data.profiles, profiles: undefined };
   }
 
   async findAll() {
     const { data, error } = await this.supabaseService.supabaseClient
       .from('posts')
-      .select('*, author:profiles(*)')
+      .select('*, profiles!user_id(*)')
       .order('created_at', { ascending: false });
 
     if (error) {
       throw new NotFoundException(error.message);
     }
-    return data;
+    
+    // Map profiles to author for each post
+    return data.map((post: any) => ({
+      ...post,
+      author: post.profiles,
+      profiles: undefined
+    }));
   }
 
   async findOne(id: string) {
     const { data, error } = await this.supabaseService.supabaseClient
       .from('posts')
-      .select('*, author:profiles(*)')
+      .select('*, profiles!user_id(*)')
       .eq('id', id)
       .single();
 
     if (error) {
       throw new NotFoundException(error.message);
     }
-    return data;
+    
+    return { ...data, author: data.profiles, profiles: undefined };
   }
 
   async update(id: string, updatePostDto: UpdatePostDto) {
@@ -54,7 +63,7 @@ export class PostsService {
       .from('posts')
       .update(updatePostDto)
       .eq('id', id)
-      .select('*, author:profiles(*)')
+      .select('*, profiles!user_id(*)')
       .single();
 
     if (error) {

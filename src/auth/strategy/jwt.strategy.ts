@@ -16,7 +16,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
           const secret = process.env.SUPABASE_JWT_SECRET || 'YOUR_SUPABASE_JWT_SECRET';
           done(null, secret);
         } catch (error) {
-          done(error, null);
+          done(error, undefined);
         }
       },
     });
